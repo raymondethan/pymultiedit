@@ -4,10 +4,11 @@ import curses
 import sys
 from editor import Editor
 from random import random
+from constants import *
 
 def got_stdin_data(protocol):
     data = protocol.editor.screen.getch()
-    msg = json.dumps({ 'key_code': data, 'x':None, 'y':None })
+    msg = json.dumps({ KEY_CODE: data, KEY_X:None, KEY_Y:None })
     protocol.user_input_received(msg)
 
 class EchoClientProtocol(asyncio.Protocol):
@@ -21,9 +22,9 @@ class EchoClientProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         data = json.loads(data.decode())
-        if 'id' in data and self._id == data['id']: return
-        if 'init_data' in data:
-            self.editor.data = data['init_data']
+        if KEY_ID in data and self._id == data[KEY_ID]: return
+        if KEY_INIT in data:
+            self.editor.data = data[KEY_INIT]
             self.editor.init()
         else:
             self.editor.on_data_received(json.dumps(data))
@@ -34,10 +35,10 @@ class EchoClientProtocol(asyncio.Protocol):
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
-        data['id'] = self._id
-        if self.editor.should_broadcast_edit(data['key_code']):
+        data[KEY_ID] = self._id
+        if self.editor.should_broadcast_edit(data[KEY_CODE]):
             self.broadcast(json.dumps(data).encode())
-        self.editor.handle_key_code(data['key_code'], data['x'], data['y'])
+        self.editor.handle_key_code(data[KEY_CODE], data[KEY_X], data[KEY_Y])
 
     def connection_lost(self, exc):
         self.loop.stop()
@@ -45,12 +46,15 @@ class EchoClientProtocol(asyncio.Protocol):
 def main(stdscr):
     stdscr.clear()
 
+    ip = sys.argv[1]
+    port = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_PORT
+
     editor = Editor(stdscr)
     loop = asyncio.get_event_loop()
     protocol = EchoClientProtocol(loop, editor, random())
+
     loop.add_reader(sys.stdin, got_stdin_data, protocol)
-    coro = loop.create_connection(lambda: protocol,
-                                          '127.0.0.1', 8888)
+    coro = loop.create_connection(lambda: protocol, ip, port)
     transport, protocol = loop.run_until_complete(coro)
     # Serve requests until Ctrl+C is pressed
     try:
@@ -61,5 +65,8 @@ def main(stdscr):
     loop.close()
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print('Need to specify a file name and optionally a port (default is '+str(DEFAULT_PORT)+')')
+        print('Run ifconfig | grep inet to get ip address on master')
+        sys.exit()
     curses.wrapper(main)
-
