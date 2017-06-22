@@ -16,7 +16,7 @@ def got_stdin_data(protocol):
     msg = json.dumps({ KEY_CODE: data, KEY_X:None, KEY_Y:None })
     protocol.user_input_received(msg)
 
-class EchoServerClientProtocol(asyncio.Protocol):
+class MasterProtocol(asyncio.Protocol):
 
     def __init__(self, _id):
         self.connections = set()
@@ -67,7 +67,7 @@ def main(stdscr):
     editor = Editor(stdscr, fname)
     
     loop = asyncio.get_event_loop()
-    protocol = EchoServerClientProtocol(random())
+    protocol = MasterProtocol(random())
     protocol.set_editor(editor)
     protocol.init_editor()
     loop.add_reader(sys.stdin, got_stdin_data, protocol)
