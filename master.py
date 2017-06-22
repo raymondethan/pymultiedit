@@ -3,6 +3,7 @@ import curses
 from editor import Editor
 import sys
 import json
+from random import random
 
 # TODO: 
 # * multicast dns
@@ -16,22 +17,32 @@ def got_stdin_data(protocol):
 
 class EchoServerClientProtocol(asyncio.Protocol):
 
-    def __init__(self):
-        self.transport = None
+    def __init__(self, _id):
+        self.connections = set()
+        self._id = _id
     
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        self.transport = transport
-        self.transport.write(json.dumps({ 'init_data':self.editor.data }).encode())
+        transport.write(json.dumps({
+            'init_data':self.editor.data,
+        }).encode())
+        self.connections.add(transport)
+
+    def broadcast(self, msg):
+        for transport in self.connections:
+            transport.write(msg)
 
     def data_received(self, data):
-        msg = data.decode()
-        self.editor.on_data_received(msg)
+        msg = json.loads(data.decode())
+        if 'id' in msg and self._id == msg['id']: return
+        self.editor.on_data_received(json.dumps(msg))
+        self.broadcast(json.dumps(msg).encode())
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
-        if self.transport and self.editor.should_broadcast_edit(data['key_code']):
-            self.transport.write(json.dumps(data).encode())
+        data['id'] = self._id
+        if self.editor.should_broadcast_edit(data['key_code']):
+            self.broadcast(json.dumps(data).encode())
         self.editor.handle_key_code(data['key_code'], data['x'], data['y'])
 
     def set_editor(self, editor):
@@ -47,7 +58,7 @@ def main(stdscr):
     editor = Editor(stdscr, fname)
     
     loop = asyncio.get_event_loop()
-    protocol = EchoServerClientProtocol()
+    protocol = EchoServerClientProtocol(random())
     protocol.set_editor(editor)
     protocol.init_editor()
     loop.add_reader(sys.stdin, got_stdin_data, protocol)
