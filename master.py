@@ -62,8 +62,8 @@ def main(stdscr):
     stdscr.clear()
     
     # check args properly passed in __main__
-    fname = sys.argv[1]
-    port = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_PORT
+    fname = sys.argv[2]
+    port = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_PORT
     editor = Editor(stdscr, fname)
     
     loop = asyncio.get_event_loop()
