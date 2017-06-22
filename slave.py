@@ -21,13 +21,20 @@ class SlaveProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data):
-        data = json.loads(data.decode())
-        if KEY_ID in data and self._id == data[KEY_ID]: return
-        if KEY_INIT in data:
-            self.editor.data = data[KEY_INIT]
-            self.editor.init()
-        else:
-            self.editor.on_data_received(json.dumps(data))
+        _data = data
+        try:
+            data = json.loads(data.decode())
+            if KEY_ID in data and self._id == data[KEY_ID]: return
+            if KEY_INIT in data:
+                self.editor.data = data[KEY_INIT]
+                self.editor.init()
+            else:
+                self.editor.on_data_received(json.dumps(data))
+        except Exception as e:
+            with open('logfile','w') as f:
+                f.write(str(e))
+                f.write("\n")
+                f.write(_data.decode())
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
