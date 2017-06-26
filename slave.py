@@ -32,13 +32,13 @@ class SlaveProtocol(asyncio.Protocol):
             return  
         data = json.loads(data)
         if KEY_ID in data and self._id == data[KEY_ID]: return
-        if 'new_id' in data:
-            self._id = data['new_id']
-        if 'init_size' in data:
-            self.file_size = data['init_size']
+        if KEY_NEW_ID in data:
+            self._id = data[KEY_NEW_ID]
+        if KEY_INIT_SIZE in data:
+            self.file_size = data[KEY_INIT_SIZE]
             self.data_buff = bytearray()
             self.editor.data = []
-            self.transport.write(json.dumps({'id':self._id,'get_data':True}).encode())
+            self.transport.write(json.dumps({KEY_ID:self._id,KEY_GET_DATA:True}).encode())
         else:
             self.editor.on_data_received(json.dumps(data))
 

@@ -25,14 +25,9 @@ class MasterProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         new_id = random()
         data_len = len(self.editor.string_of_data(self.editor.data).encode())
-        transport.write(json.dumps({'new_id':new_id,'init_size':data_len}).encode())
-        #transport.writelines(to_send)
-        #transport.write(json.dumps({
-        #    KEY_INIT:self.editor.data,
-        #}).encode())
+        transport.write(json.dumps({KEY_NEW_ID:new_id,KEY_INIT_SIZE:data_len}).encode())
         self.connections[new_id] = transport
         self.editor.screen.clear()
-        return
 
     def broadcast(self, msg):
         for t_id in self.connections:
@@ -43,9 +38,8 @@ class MasterProtocol(asyncio.Protocol):
         if KEY_ID not in msg: raise Exception('Msg send without ID')
         if self._id == msg[KEY_ID]: return
         t_id = msg[KEY_ID]
-        if 'get_data' in msg:
+        if KEY_GET_DATA in msg:
             to_send = self.editor.string_of_data(self.editor.data).encode()
-            #print(len(to_send))
             self.connections[t_id].write(to_send)
         else:
             self.editor.on_data_received(json.dumps(msg))
