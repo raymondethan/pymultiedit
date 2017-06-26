@@ -21,6 +21,9 @@ class SlaveProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data):
+        with open('dfile','a') as f:
+            f.write('--------------new data------------\n')
+            f.write(data.decode())
         _data = data
         try:
             data = json.loads(data.decode())
@@ -31,10 +34,9 @@ class SlaveProtocol(asyncio.Protocol):
             else:
                 self.editor.on_data_received(json.dumps(data))
         except Exception as e:
+            print(e)
             with open('logfile','w') as f:
                 f.write(str(e))
-                f.write("\n")
-                f.write(_data.decode())
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)

@@ -34,7 +34,7 @@ class MulticastServerProtocol(asyncio.Protocol):
     def datagram_received(self, data, addr):
         data = json.loads(data.decode())
         
-        #print("Datagram %s received from %s" % (repr(data), repr(addr)))
+        print("Datagram %s received from %s" % (repr(data), repr(addr)))
         if data['id'] == myid: return
         
         if 'cmd' in data and data['cmd'] == 'start':
@@ -74,7 +74,7 @@ def main(stdscr):
     logging.basicConfig(level=logging.DEBUG)
     
     protocol =  MulticastServerProtocol(myid, editor)
-    protocol.init_editor()
+    #protocol.init_editor()
     loop.add_reader(sys.stdin, got_stdin_data, protocol)
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -96,7 +96,4 @@ def main(stdscr):
     loop.close()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print('Need to specify a file name') 
-        sys.exit()
     curses.wrapper(main)
