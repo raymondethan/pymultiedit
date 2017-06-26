@@ -34,7 +34,7 @@ class MulticastServerProtocol(asyncio.Protocol):
     def datagram_received(self, data, addr):
         data = json.loads(data.decode())
         
-        #print("Datagram %s received from %s" % (repr(data), repr(addr)))
+        print("Datagram %s received from %s" % (repr(data), repr(addr)))
         if data['id'] == myid: return
         
         if 'cmd' in data and data['cmd'] == 'start':
