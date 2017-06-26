@@ -16,27 +16,36 @@ class SlaveProtocol(asyncio.Protocol):
         self.loop = loop
         self.editor = editor
         self._id = _id
+        self.data_buffer = bytearray()
 
     def connection_made(self, transport):
         self.transport = transport
 
+    def eof_received(self):
+        data = json.loads(self.data_buffer)
+        if KEY_ID in data and self._id == data[KEY_ID]: return
+        if KEY_INIT in data:
+            self.editor.data = data[KEY_INIT]
+            self.editor.init()
+        else:
+            self.editor.on_data_received(json.dumps(data))
+
     def data_received(self, data):
-        with open('dfile','a') as f:
-            f.write('--------------new data------------\n')
-            f.write(data.decode())
-        _data = data
-        try:
-            data = json.loads(data.decode())
-            if KEY_ID in data and self._id == data[KEY_ID]: return
-            if KEY_INIT in data:
-                self.editor.data = data[KEY_INIT]
-                self.editor.init()
-            else:
-                self.editor.on_data_received(json.dumps(data))
-        except Exception as e:
-            print(e)
-            with open('logfile','w') as f:
-                f.write(str(e))
+        self.data_buffer += data
+        #_data = data
+        #try:
+        #    data = json.loads(data.decode())
+        #    if KEY_ID in data and self._id == data[KEY_ID]: return
+        #    if KEY_INIT in data:
+        #        self.editor.data = data[KEY_INIT]
+        #        self.editor.init()
+        #    else:
+        #        self.editor.on_data_received(json.dumps(data))
+        #except Exception as e:
+        #    with open('logfile','w') as f:
+        #        f.write(str(e))
+        #        f.write("\n")
+        #        f.write(_data.decode())
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
