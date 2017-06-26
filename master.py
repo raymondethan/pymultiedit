@@ -9,7 +9,6 @@ from urllib import request
 
 # TODO: 
 # * multicast dns
-# * delete newlines
 
 def got_stdin_data(protocol):
     data = protocol.editor.screen.getch()

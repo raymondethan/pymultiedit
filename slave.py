@@ -27,7 +27,7 @@ class SlaveProtocol(asyncio.Protocol):
         if self.is_receiving_file():
             self.data_buff += data
             if not self.is_receiving_file():
-                self.editor.data = self.data_buff.decode().split()
+                self.editor.data = self.data_buff.decode().split(self.editor.NEW_LINE)
                 self.editor.init()
             return  
         data = json.loads(data)

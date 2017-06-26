@@ -75,6 +75,8 @@ class Editor:
         self.screen.refresh()
 
     def handle_key_code(self, key_code, x, y):
+        if self.should_broadcast_edit(key_code):
+            self.write(key_code, x, y)
         if self.is_cmd_start(key_code):
             self.handle_cmd()
         else:
@@ -82,8 +84,6 @@ class Editor:
         if self.is_exit(key_code):
             self.remove_file(self.backup_fname())
             sys.exit()
-        elif self.should_broadcast_edit(key_code):
-            self.write(key_code, x, y)
         self.display()
         self.screen.move(self.raw_y(),self.x) 
         self.screen.refresh()
@@ -138,7 +138,7 @@ class Editor:
                 y -= 1
         else:
             key = self.map_code_to_char(key) or curses.keyname(key).decode('utf-8')
-            new_line.insert(x, key)
+            if len(key) == 1: new_line.insert(x, key)
         self.data[y] = "".join(new_line)
         self.data = (self.string_of_data(self.data)).split(self.NEW_LINE)
 
@@ -168,7 +168,7 @@ class Editor:
         elif self.is_delete(key_code):
             if self.x > 0:
                 self.x = self.x - 1
-            else:
+            elif self.raw_y() > 0:
                 self.set_raw_y(self.raw_y()-1)
                 self.x = len(self.data[self.y()])
         else:
