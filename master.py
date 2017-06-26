@@ -19,24 +19,31 @@ def got_stdin_data(protocol):
 class MasterProtocol(asyncio.Protocol):
 
     def __init__(self, _id):
-        self.connections = set()
+        self.connections = {}
         self._id = _id
     
     def connection_made(self, transport):
-        transport.write(json.dumps({
-            KEY_INIT:self.editor.data,
-        }).encode())
-        self.connections.add(transport)
+        new_id = random()
+        data_len = len(self.editor.string_of_data(self.editor.data).encode())
+        transport.write(json.dumps({KEY_NEW_ID:new_id,KEY_INIT_SIZE:data_len}).encode())
+        self.connections[new_id] = transport
+        self.editor.screen.clear()
 
     def broadcast(self, msg):
-        for transport in self.connections:
-            transport.write(msg)
+        for t_id in self.connections:
+            self.connections[t_id].write(msg)
 
     def data_received(self, data):
         msg = json.loads(data.decode())
-        if KEY_ID in msg and self._id == msg[KEY_ID]: return
-        self.editor.on_data_received(json.dumps(msg))
-        self.broadcast(json.dumps(msg).encode())
+        if KEY_ID not in msg: raise Exception('Msg send without ID')
+        if self._id == msg[KEY_ID]: return
+        t_id = msg[KEY_ID]
+        if KEY_GET_DATA in msg:
+            to_send = self.editor.string_of_data(self.editor.data).encode()
+            self.connections[t_id].write(to_send)
+        else:
+            self.editor.on_data_received(json.dumps(msg))
+            self.broadcast(json.dumps(msg).encode())
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
@@ -53,10 +60,12 @@ class MasterProtocol(asyncio.Protocol):
 
     def connection_lost(self, exn):
         to_remove = set()
-        for transport in self.connections:
+        for t_id in self.connections:
+            transport = self.connections[t_id]
             if transport.is_closing():
-                to_remove.add(transport)
-        self.connections -= to_remove
+                to_remove.add(t_id)
+        for t_id in to_remove:
+            del self.connections[t_id]
 
 def main(stdscr):
     stdscr.clear()
