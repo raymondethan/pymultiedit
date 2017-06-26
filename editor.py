@@ -129,9 +129,13 @@ class Editor:
 
     def write(self, key, x, y):
         new_line = list(self.data[y])
-        if key == self.KEY_DELETE:
+        if self.is_delete(key):
             if x > 0:
                 del new_line[x-1]
+            elif y > 0:
+                new_line = list(self.data[y-1]) + new_line
+                del self.data[y]
+                y -= 1
         else:
             key = self.map_code_to_char(key) or curses.keyname(key).decode('utf-8')
             new_line.insert(x, key)
@@ -161,13 +165,20 @@ class Editor:
             else:
                 self.offset_from_top += 1
             self.x = 0
-        elif key_code == self.KEY_DELETE:
-            self.x = self.x - 1 if self.x > 0 else self.x
+        elif self.is_delete(key_code):
+            if self.x > 0:
+                self.x = self.x - 1
+            else:
+                self.set_raw_y(self.raw_y()-1)
+                self.x = len(self.data[self.y()])
         else:
             self.x = self.x + 1 if self.x < self.width else self.x
         x_bound = min(len(self.data[self.y()]), self.width)
         if self.x > x_bound:
             self.x = x_bound
+
+    def is_delete(self, key):
+        return key == self.KEY_DELETE or key == curses.KEY_BACKSPACE
 
     def handle_cmd(self):
         key = self.screen.getch()
