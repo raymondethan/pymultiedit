@@ -7,7 +7,7 @@ from random import random
 from constants import *
 from urllib import request
 
-# TODO: 
+# TODO:
 # * multicast dns
 
 def got_stdin_data(protocol):
@@ -20,7 +20,7 @@ class MasterProtocol(asyncio.Protocol):
     def __init__(self, _id):
         self.connections = {}
         self._id = _id
-    
+
     def connection_made(self, transport):
         new_id = random()
         data_len = len(self.editor.string_of_data(self.editor.data).encode())
@@ -68,12 +68,12 @@ class MasterProtocol(asyncio.Protocol):
 
 def main(stdscr):
     stdscr.clear()
-    
+
     # check args properly passed in __main__
     fname = sys.argv[2]
     port = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_PORT
     editor = Editor(stdscr, fname)
-    
+
     loop = asyncio.get_event_loop()
     protocol = MasterProtocol(random())
     protocol.set_editor(editor)
@@ -83,13 +83,13 @@ def main(stdscr):
     # Each client connection will create a new protocol instance
     coro = loop.create_server(lambda: protocol, '0.0.0.0', port)
     server = loop.run_until_complete(coro)
-    
+
     # Serve requests until Ctrl+C is pressed
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         pass
-    
+
     # Close the server
     server.close()
     loop.run_until_complete(server.wait_closed())
@@ -97,7 +97,7 @@ def main(stdscr):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print('Need to specify a file name and optionally a port (default is '+str(DEFAULT_PORT)+')') 
+        print('Need to specify a file name and optionally a port (default is '+str(DEFAULT_PORT)+')')
         sys.exit()
     curses.wrapper(main)
 

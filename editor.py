@@ -48,7 +48,8 @@ class Editor:
         # gets rid of bug where old last line not cleared from screen
         output[-1] = output[-1] + ''.join([' ' for i in range(len(output[-1]),self.width)])
         if len(output) < self.height:
-            output += ["~" for i in range(0, self.height-len(output))]
+            padding =  ' '*(self.width - 1)
+            output += ["~"+padding for i in range(0, self.height-len(output))]
         return self.string_of_data(output)
 
     def display(self):
@@ -84,7 +85,7 @@ class Editor:
             self.remove_file(self.backup_fname())
             sys.exit()
         self.display()
-        self.screen.move(self.raw_y(),self.x) 
+        self.screen.move(self.raw_y(),self.x)
         self.screen.refresh()
 
     def should_broadcast_edit(self, key_code):
@@ -114,7 +115,7 @@ class Editor:
                 self.write(key_code, self.x, self.y())
             self.set_cursor(key_code)
             self.display()
-            self.screen.move(self.raw_y(),self.x) 
+            self.screen.move(self.raw_y(),self.x)
             self.screen.refresh()
 
     def is_move(self, key):
@@ -156,8 +157,8 @@ class Editor:
             if self.raw_y() < max_y:
                 self.set_raw_y(self.raw_y()+1)
             else:
-                if self.offset_from_top < (len(self.data)-self.height-1):
-                    self.offset_from_top += 1 
+                if self.offset_from_top < (len(self.data)-self.height):
+                    self.offset_from_top += 1
             if self.old_x and self.old_x > self.x:
                 self.x = self.old_x
         elif key_code == curses.KEY_LEFT:
@@ -187,7 +188,6 @@ class Editor:
         if self.x > x_bound:
             self.old_x = self.x
             self.x = x_bound
-        self.err_msg = 'y: ' + str(self.y()) + ' raw_y: ' + str(self.raw_y()) + ' offset: ' + str(self.offset_from_top)
 
     def is_delete(self, key):
         return key == self.KEY_DELETE or key == curses.KEY_BACKSPACE
@@ -231,8 +231,8 @@ class Editor:
 
 def main(stdscr):
     stdscr.clear()
-    
-    fname = sys.argv[1] if len(sys.argv) > 1 else 'tmp.txt' 
+
+    fname = sys.argv[1] if len(sys.argv) > 1 else 'tmp.txt'
     editor = Editor(stdscr, fname)
     editor.run_editor()
 

@@ -29,7 +29,7 @@ class SlaveProtocol(asyncio.Protocol):
             if not self.is_receiving_file():
                 self.editor.data = self.data_buff.decode().split(self.editor.NEW_LINE)
                 self.editor.init()
-            return  
+            return
         data = json.loads(data)
         if KEY_ID in data and self._id == data[KEY_ID]: return
         if KEY_NEW_ID in data:
