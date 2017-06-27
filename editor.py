@@ -5,8 +5,6 @@ from os import remove
 import asyncio
 from json import loads
 
-# TODO: delete newline when backspace at x = 0
-# TODO: scrolling
 class Editor:
 
     KEY_DELETE = 127
@@ -145,7 +143,7 @@ class Editor:
         self.data = (self.string_of_data(self.data)).split(self.NEW_LINE)
 
     def set_cursor(self, key_code):
-        max_y = min(self.height-1,len(self.data)-1)
+        max_y = min(self.height-1,len(self.data)-self.offset_from_top-1)
         if key_code == curses.KEY_UP:
             if self.raw_y() > 0:
                 self.set_raw_y(self.raw_y()-1)
@@ -178,16 +176,18 @@ class Editor:
             if self.x > 0:
                 self.x = self.x - 1
             elif self.raw_y() > 0:
-                new_x = self.old_x
                 self.set_raw_y(self.raw_y()-1)
-                self.x = new_x
+                self.x = self.old_x
+            elif self.offset_from_top > 0:
+                self.offset_from_top -= 1
+                self.x = self.old_x
         else:
             self.x = self.x + 1 if self.x < self.width else self.x
         x_bound = min(len(self.data[self.y()]), self.width)
         if self.x > x_bound:
             self.old_x = self.x
             self.x = x_bound
-        self.err_msg = 'x: ' + str(self.x) + ' old: ' + str(self.old_x or 0)
+        self.err_msg = 'y: ' + str(self.y()) + ' raw_y: ' + str(self.raw_y()) + ' offset: ' + str(self.offset_from_top)
 
     def is_delete(self, key):
         return key == self.KEY_DELETE or key == curses.KEY_BACKSPACE
