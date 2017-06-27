@@ -9,6 +9,8 @@ from urllib import request
 
 # TODO: 
 # * multicast dns
+# * out of range bug when delete after going below screen
+# * can't see last line
 
 def got_stdin_data(protocol):
     data = protocol.editor.screen.getch()
