@@ -101,23 +101,6 @@ class Editor:
         self.screen.move(self.raw_y(),self.x)
         self.screen.refresh()
 
-    def run_editor(self):
-        self.init()
-        while True:
-            key_code = self.screen.getch()
-            if self.is_exit(key_code):
-                self.remove_file(self.backup_fname())
-                sys.exit()
-            if self.is_cmd_start(key_code):
-                self.handle_cmd()
-                continue
-            if not self.is_move(key_code):
-                self.write(key_code, self.x, self.y())
-            self.set_cursor(key_code)
-            self.display()
-            self.screen.move(self.raw_y(),self.x)
-            self.screen.refresh()
-
     def is_move(self, key):
         return key in [curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT]
 
@@ -192,6 +175,7 @@ class Editor:
     def is_delete(self, key):
         return key == self.KEY_DELETE or key == curses.KEY_BACKSPACE
 
+    # synchronous
     def handle_cmd(self):
         key = self.screen.getch()
         cmd = ""

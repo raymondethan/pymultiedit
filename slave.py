@@ -1,11 +1,13 @@
+from time import sleep
 import asyncio
-import json
 import curses
+import json
 import sys
+
+from constants import *
 from editor import Editor
 from random import random
-from constants import *
-from time import sleep
+from reader import Reader
 
 def got_stdin_data(protocol):
     data = protocol.editor.screen.getch()
@@ -19,28 +21,25 @@ class SlaveProtocol(asyncio.Protocol):
         self._id = None
         self.data_buff = bytearray()
         self.file_size = 0
+        self.reader = Reader()
 
     def connection_made(self, transport):
         self.transport = transport
 
     def data_received(self, data):
-        if self.is_receiving_file():
-            self.data_buff += data
-            if not self.is_receiving_file():
-                self.editor.data = self.data_buff.decode().split(self.editor.NEW_LINE)
+        data = self.reader.push(data)
+        if not data: return
+
+        for msg in data: 
+            msg = json.loads(msg)
+            if KEY_ID in msg and self._id == msg[KEY_ID]: return
+            if KEY_NEW_ID in msg:
+                self._id = msg[KEY_NEW_ID]
+            if KEY_NEW_DATA in msg:
+                self.editor.data = msg[KEY_NEW_DATA]
                 self.editor.init()
-            return
-        data = json.loads(data)
-        if KEY_ID in data and self._id == data[KEY_ID]: return
-        if KEY_NEW_ID in data:
-            self._id = data[KEY_NEW_ID]
-        if KEY_INIT_SIZE in data:
-            self.file_size = data[KEY_INIT_SIZE]
-            self.data_buff = bytearray()
-            self.editor.data = []
-            self.transport.write(json.dumps({KEY_ID:self._id,KEY_GET_DATA:True}).encode())
-        else:
-            self.editor.on_data_received(json.dumps(data))
+            else:
+                self.editor.on_data_received(json.dumps(msg))
 
     def is_receiving_file(self):
         return len(self.data_buff) < self.file_size

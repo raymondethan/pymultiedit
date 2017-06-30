@@ -5,10 +5,12 @@ import sys
 import json
 from random import random
 from constants import *
-from urllib import request
+from reader import Reader
 
 # TODO:
 # * multicast dns
+# * if get conflict with positioning just append to end
+# * how to make sure both files stay in sync?
 
 def got_stdin_data(protocol):
     data = protocol.editor.screen.getch()
@@ -20,29 +22,30 @@ class MasterProtocol(asyncio.Protocol):
     def __init__(self, _id):
         self.connections = {}
         self._id = _id
+        self.reader = Reader()
 
     def connection_made(self, transport):
         new_id = random()
-        data_len = len(self.editor.string_of_data(self.editor.data).encode())
-        transport.write(json.dumps({KEY_NEW_ID:new_id,KEY_INIT_SIZE:data_len}).encode())
+        to_send = json.dumps({KEY_NEW_ID:new_id,KEY_NEW_DATA:self.editor.data}).encode()
+        transport.write(to_send)
         self.connections[new_id] = transport
         self.editor.screen.clear()
 
-    def broadcast(self, msg):
+    def broadcast(self, msg, ignore=None):
         for t_id in self.connections:
+            if t_id == ignore: continue
             self.connections[t_id].write(msg)
 
     def data_received(self, data):
-        msg = json.loads(data.decode())
-        if KEY_ID not in msg: raise Exception('Msg send without ID')
-        if self._id == msg[KEY_ID]: return
-        t_id = msg[KEY_ID]
-        if KEY_GET_DATA in msg:
-            to_send = self.editor.string_of_data(self.editor.data).encode()
-            self.connections[t_id].write(to_send)
-        else:
+        data = self.reader.push(data)
+        if not data: return
+        for msg in data:
+            msg = json.loads(msg)
+            if KEY_ID not in msg: raise Exception('Msg send without ID')
+            if self._id == msg[KEY_ID]: return
+            t_id = msg[KEY_ID]
             self.editor.on_data_received(json.dumps(msg))
-            self.broadcast(json.dumps(msg).encode())
+            self.broadcast(json.dumps(msg).encode(), ignore=t_id)
 
     def user_input_received(self, msg):
         data = self.editor.parse_input_data(msg)
